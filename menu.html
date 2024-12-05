@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Document</title>
+        <link rel="stylesheet" href="index.css">
+        <link
+            href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+            rel="stylesheet"
+            integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH"
+            crossorigin="anonymous">
+        <style>
+            
+        </style>
+    </head>
+    <body>
+        <main class="d-flex">
+            <!-- Side bar for navigation -->
+            <nav id="sidebar" class="d-flex flex-column bg-dark text-light">
+                <h1 id="title">MacDondalds</h1>
+                <hr />
+                <ul class="nav d-flex flex-column">
+                    <li class="nav-item h3">
+                        <a class="nav-link" href="index.html">Home</a>
+                    </li>
+                    <li class="nav-item h3">
+                        <a class="nav-link text-white"
+                            href="orders.html">Orders</a>
+                    </li>
+                    <li class="nav-item h3">
+                        <a class="nav-link text-white"
+                            href="inventory.html">Inventory</a>
+                    </li>
+                    <li class="nav-item h3">
+                        <a class="nav-link text-white"
+                            href="employees.html">Employees</a>
+                    </li>
+                    <li class="nav-item h3">
+                        <a class="nav-link text-white" href="menu.html">Menu</a>
+                    </li>
+                </ul>
+                <div class="flex-grow-1"></div>
+            </nav>
+
+            <!-- Main content -->
+            <div class="flex-grow-1 d-flex flex-column">
+                <nav id="top-nav" class="d-flex justify-content-start">
+                    <select name="Branches" id="select-branches"
+                        class="form-select">
+                        <option value disabled selected>Select a Branch</option>
+                        <option value="branch1">Branch 1</option>
+                        <option value="branch2">Branch 2</option>
+                        <option value="branch3">Branch 3</option>
+                    </select>
+                </nav>
+                <div class="main-content d-flex flex-column">
+                    <h1>Menu Item Reference</h1>
+                    <div class="main-inner d-flex">
+                        <div class="main-inner-left">
+
+                            <script type="module">
+                                import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+                                import { API_KEY, API_URL } from './config.js';
+                            
+                                const supabase = createClient(API_URL, API_KEY);
+                                const container = document.querySelector('.main-inner-left');
+                                const menuItems = await fetchmenus();
+                                let selectedMenuItem = menuItems ? menuItems[0] : ""
+                                
+                                async function fetchmenus() {
+                                    //TODO - fix
+                                    return ['burger', 'fries', 'bigmac', 'quarter pounder'];
+                                }
+                            
+                                // Define the click handler
+                                function onClick(event) {
+                                    selectedMenuItem = event.target.textContent
+
+                                    const buttons = document.querySelectorAll('.list-item')
+                                    
+                                    const menuName = document.querySelector('#menu-name')
+                                    menuName.innerHTML = event.target.textContent
+                                    
+                                    buttons.forEach((button, i) => {
+                                        if(button.innerHTML === event.target.textContent) {
+                                            button.classList.replace("btn-primary", "btn-secondary")
+                                        } else {
+                                            button.classList.replace("btn-secondary", "btn-primary")
+                                        }
+                                    })
+                                }
+                            
+                                menuItems.forEach((menuItem) => {
+                                    const button = document.createElement('button');
+                                    button.classList.add('btn', 'btn-primary', 'list-item');
+                                    button.textContent = menuItem;
+                                    button.addEventListener('click', onClick); // Attach click handler
+                                    container.appendChild(button);
+                                });
+                            </script>
+                        </div>
+                        <div class="main-inner-right d-flex flex-column">
+                            <h1 id="menu-name">Select an menu item!</h1>
+                            <ul class="list">
+                                <!-- TODO -->
+                                A list containing all ingredients
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+        <script src="config.js" type="module"></script>
+        <script src="db.js" type="module"></script>
+        <script src="branch.js" type="module"></script>
+        <script src="sidenav.js" type="module"></script>
+    </body>
+</html>
