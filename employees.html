@@ -54,62 +54,114 @@
                 </nav>
                 <div class="main-content d-flex flex-column">
                     <h1>Employees</h1>
+                    <hr>
                     <div class="main-inner d-flex">
                         <div class="main-inner-left">
-
                             <script type="module">
-                                import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
-                                import { API_KEY, API_URL } from './config.js';
-                            
-                                const supabase = createClient(API_URL, API_KEY);
-                                // Populate employees dynamically
-                                const container = document.querySelector('.main-inner-left');
-                                const employees = await fetchEmployees();
-                                let selectedEmployee = employees ? employees[0] : ""
-                                
-                                // Fetch employees dynamically
-                                async function fetchEmployees() {
-                                    //TODO - fix
-                                    return ['bob', 'jim', 'jimbob', 'micheal'];
-                                }
-                            
-                                // Define the click handler
-                                function onEmployeeClick(event) {
-                                    console.log(`Employee clicked: ${event.target.textContent}`);
-                                    selectedEmployee = event.target.textContent
+                    import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+                    import { API_KEY, API_URL } from './config.js';
 
-                                    const buttons = document.querySelectorAll('.list-item')
-                                    
-                                    const employeeName = document.querySelector('#employee-name')
-                                    employeeName.innerHTML = event.target.textContent
-                                    
-                                    buttons.forEach((button, i) => {
-                                        if(button.innerHTML === event.target.textContent) {
-                                            button.classList.replace("btn-primary", "btn-secondary")
-                                        } else {
-                                            button.classList.replace("btn-secondary", "btn-primary")
-                                        }
-                                    })
-                                }
-                            
-                                employees.forEach((employee) => {
-                                    const button = document.createElement('button');
-                                    button.classList.add('btn', 'btn-primary', 'list-item');
-                                    button.textContent = employee;
-                                    button.addEventListener('click', onEmployeeClick); // Attach click handler
-                                    container.appendChild(button);
-                                });
-                            </script>
+                    const supabase = createClient(API_URL, API_KEY);
+                    const container = document.querySelector('.main-inner-left');
+                    const employees = await fetchEmployees();
+                    const map = new Map();
+                    let selectedEmployee = employees ? employees[0] : "";
+
+                    // Fetch employees and their shifts
+                    async function fetchEmployees() {
+                        const { data, error } = await supabase
+                            .from('employees') // Primary table
+                            .select(`
+                                employee_id,
+                                employee_name,
+                                job_title,
+                                employee_shifts(shift_date, start_time, end_time, branch_id) // Join with shifts
+                            `);
+
+                        if (error) {
+                            console.error('Error fetching employees and shifts:', error);
+                            return [];
+                        } else {
+                            console.log('Fetched employees and shifts:', data);
+                            return data;
+                        }
+                    }
+
+                    // Define the click handler for employees
+                    function onEmployeeClick(event) {
+                        const employeeId = parseInt(event.target.dataset.id);
+                        const employee = map.get(employeeId);
+
+                        // Update the UI with employee details
+                        document.querySelector('#employee-name').innerHTML = `Employee: ${employee.employee_name}`;
+                        document.querySelector('#employee-job-title').innerHTML = `Job Title: ${employee.job_title}`;
+                        
+                        const shiftTableBody = document.querySelector('#shift-table-body');
+                        shiftTableBody.innerHTML = ""; // Clear existing shifts
+
+                        employee.employee_shifts.forEach(shift => {
+                            const row = document.createElement('tr');
+                            row.innerHTML = `
+                                <td>${shift.shift_date}</td>
+                                <td>${shift.start_time}</td>
+                                <td>${shift.end_time}</td>
+                                <td>${shift.branch_id}</td>
+                            `;
+                            shiftTableBody.appendChild(row);
+                        });
+
+                        // Highlight selected button
+                        const buttons = document.querySelectorAll('.list-item');
+                        buttons.forEach((button) => {
+                            if (parseInt(button.dataset.id) === employeeId) {
+                                button.classList.replace("btn-primary", "btn-secondary");
+                            } else {
+                                button.classList.replace("btn-secondary", "btn-primary");
+                            }
+                        });
+                    }
+
+                    // Populate buttons for each employee
+                    employees.forEach((employee) => {
+                        const button = document.createElement('button');
+                        button.classList.add('btn', 'btn-primary', 'list-item', 'my-2');
+                        button.textContent = employee.employee_name;
+                        button.dataset.id = employee.employee_id; // Store employee ID
+                        map.set(employee.employee_id, employee); // Map employee data by ID
+                        button.addEventListener('click', onEmployeeClick); // Attach click handler
+                        container.appendChild(button);
+                    });
+                </script>
                         </div>
                         <div class="main-inner-right d-flex flex-column">
-                            <h1 id="employee-name">Select an employee!</h1>
-                            <ul class="list">
-                                A list containing all of the shifts
-                            </ul>
+                            <!-- Employee Details -->
+                            <div class="" style="margin-bottom: 3rem;">
+                                    <h1 id="employee-name"
+                                        class="">Select an
+                                        employee!</h1>
+                                    <h2 id="employee-job-title"
+                                        class=""></h2>
+                            </div>
+                            <!-- Employee Shifts -->
+                            <h2>Shifts</h2>
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Start Time</th>
+                                        <th>End Time</th>
+                                        <th>Branch ID</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="shift-table-body">
+                                    <!-- Shifts will be dynamically inserted here -->
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                 </div>
             </div>
+
         </main>
         <script src="config.js" type="module"></script>
         <script src="db.js" type="module"></script>

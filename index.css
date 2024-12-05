@@ -67,7 +67,7 @@ footer {
 }
 
 #select-branches {
-    max-width: 300px;
+    /* max-width: 300px; */
     font-size: 1.5rem;
     padding: 0.5rem 1rem;
     border-radius: 5px;
@@ -103,4 +103,8 @@ footer {
 .list-item {
     width: 100%;
     margin-top: 0.5rem;
+}
+
+#page-title {
+    margin-bottom: 3rem;
 }

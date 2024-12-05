@@ -49,15 +49,44 @@
                         <option value disabled selected>Select a Branch</option>
                     </select>
                 </nav>
-                <div class="main-content d-flex flex-column flex-grow-1 justify-content-start align-items-center">
-                    <h1>Welcome to McDonald's Management System</h1>
+                <div class="main-content d-flex flex-column flex-grow-1">
+                    <h1 id="page-title" class="align-self-center">Welcome to MacDondalds Management System</h1>
+                    <div class="">
+                        <h1>Branch Information:</h1>
+                        <hr>
+                        <h2 id="branch-address"></h2>
+                        <h2 id="branch-id"></h2>
+                        <h2 id="branch-phone"></h2>
+                        <h2 id="branch-open"></h2>
+                        <h2 id="branch-close"></h2>
+                    </div>
                 </div>
             </div>
         </main>
+        
+        <script type="module">
+            
+            // Populate employees dynamically
+            const branchAddress = document.querySelector('#branch-address')
+            const branchId = document.querySelector('#branch-id')
+            const branchPhone = document.querySelector('#branch-phone')
+            const branchOpen = document.querySelector('#branch-open')
+            const branchClose = document.querySelector('#branch-close')
+            const currentBranch = JSON.parse(sessionStorage.getItem("selectedBranch"))
 
+            branchAddress.innerText = "Address: "+currentBranch.address
+            branchId.innerText = "Branch Id: "+currentBranch.branch_id
+            branchPhone.innerText = "Phone: "+currentBranch.phone_number
+            branchOpen.innerText = "Open Time: "+currentBranch.open_time
+            branchClose.innerText = "Closing Time: "+currentBranch.close_time
+            
+            // Define the click handler
+            
+        </script>
+        
         <script src="config.js" type="module"></script>
-        <script src="db.js" type="module"></script>
         <script src="branch.js" type="module"></script>
+        <script src="db.js" type="module"></script>
         <script src="sidenav.js" type="module"></script>
     </body>
 </html>

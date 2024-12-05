@@ -54,6 +54,7 @@
                 </nav>
                 <div class="main-content d-flex flex-column">
                     <h1>Orders</h1>
+                    <hr>
                     <div class="main-inner d-flex">
                         <div class="main-inner-left">
 
@@ -64,21 +65,46 @@
                                 const supabase = createClient(API_URL, API_KEY);
                                 const container = document.querySelector('.main-inner-left');
                                 const orders = await fetchOrders();
-                                let selectedOrder = orders ? orders[0] : ""
+                                const map = new Map()
+                                let selected = orders ? orders[0] : ""
                                 
                                 async function fetchOrders() {
-                                    //TODO - fix
-                                    return ['1', '2', '3', '4'];
+                                    const { data, error } = await supabase
+                                    .from('orders') // Primary table
+                                    .select(`
+                                      order_id,
+                                      branch_id,
+                                      table_number,
+                                      time_ordered,
+                                      quantity_ordered,
+                                      menu_items!inner(menu_id, menu_name) // Inner join with menu_items
+                                    `);
+                                  
+                                  if (error) {
+                                    console.error('Error fetching data:', error);
+                                  } else {
+                                    console.log('Fetched joined data:', data);
+                                  }
+                                  
+                                
+                                  return data
                                 }
                             
                                 // Define the click handler
                                 function onClick(event) {
-                                    selectedOrder = event.target.textContent
-
+                                    selected = event.target.textContent
+                                    
                                     const buttons = document.querySelectorAll('.list-item')
                                     
                                     const orderName = document.querySelector('#order-number')
-                                    orderName.innerHTML = event.target.textContent
+                                    const orderTable = document.querySelector('#order-table')
+                                    const orderMenuId = document.querySelector('#order-menu_id')
+                                    const orderQuantity = document.querySelector('#order-quantity')
+                                    const order = map.get(parseInt(event.target.textContent))
+                                    orderName.innerHTML = "Order: " + order.order_id
+                                    orderTable.innerHTML = "Table: " + order.table_number
+                                    orderMenuId.innerHTML = "Menu Item: " + order.menu_items.menu_name
+                                    orderQuantity.innerHTML = "Quantity: " + order.quantity_ordered
                                     
                                     buttons.forEach((button, i) => {
                                         if(button.innerHTML === event.target.textContent) {
@@ -92,7 +118,8 @@
                                 orders.forEach((order) => {
                                     const button = document.createElement('button');
                                     button.classList.add('btn', 'btn-primary', 'list-item');
-                                    button.textContent = order;
+                                    button.textContent = order.order_id;
+                                    map.set(order.order_id, order)
                                     button.addEventListener('click', onClick); // Attach click handler
                                     container.appendChild(button);
                                 });
@@ -100,11 +127,11 @@
                         </div>
                         <div class="main-inner-right d-flex flex-column">
                             <h1 id="order-number">Select an order!</h1>
-                            <ul class="list">
-                                <h1>order name</h1>
-                                <h1>menu item</h1>
-                                <h1>quantity</h1>
-                            </ul>
+                            <h2 id="order-table"></h2>
+                            <h2 id="order-menu_id"></h2>
+                            <h2 id="order-quantity"></h2>
+                            <div class="flex-grow-1"></div>
+                            <button class="btn btn-danger">Delete</button>
                         </div>
                     </div>
                 </div>

@@ -54,55 +54,84 @@
                 </nav>
                 <div class="main-content d-flex flex-column">
                     <h1>Menu Item Reference</h1>
+                    <hr>
                     <div class="main-inner d-flex">
                         <div class="main-inner-left">
-
                             <script type="module">
-                                import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
-                                import { API_KEY, API_URL } from './config.js';
-                            
-                                const supabase = createClient(API_URL, API_KEY);
-                                const container = document.querySelector('.main-inner-left');
-                                const menuItems = await fetchmenus();
-                                let selectedMenuItem = menuItems ? menuItems[0] : ""
-                                
-                                async function fetchmenus() {
-                                    //TODO - fix
-                                    return ['burger', 'fries', 'bigmac', 'quarter pounder'];
-                                }
-                            
-                                // Define the click handler
-                                function onClick(event) {
-                                    selectedMenuItem = event.target.textContent
+                    import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+                    import { API_KEY, API_URL } from './config.js';
 
-                                    const buttons = document.querySelectorAll('.list-item')
-                                    
-                                    const menuName = document.querySelector('#menu-name')
-                                    menuName.innerHTML = event.target.textContent
-                                    
-                                    buttons.forEach((button, i) => {
-                                        if(button.innerHTML === event.target.textContent) {
-                                            button.classList.replace("btn-primary", "btn-secondary")
-                                        } else {
-                                            button.classList.replace("btn-secondary", "btn-primary")
-                                        }
-                                    })
-                                }
-                            
-                                menuItems.forEach((menuItem) => {
-                                    const button = document.createElement('button');
-                                    button.classList.add('btn', 'btn-primary', 'list-item');
-                                    button.textContent = menuItem;
-                                    button.addEventListener('click', onClick); // Attach click handler
-                                    container.appendChild(button);
-                                });
-                            </script>
+                    const supabase = createClient(API_URL, API_KEY);
+                    const container = document.querySelector('.main-inner-left');
+                    const menuItems = await fetchMenus();
+                    const map = new Map();
+                    let selectedMenuItem = menuItems ? menuItems[0] : "";
+
+                    // Fetch menu items and their ingredients
+                    async function fetchMenus() {
+                        const { data, error } = await supabase
+                            .from('menu_items') // Primary table
+                            .select(`
+                                menu_id,
+                                menu_name,
+                                menu_ingredients(ingredient_id, quantity_used, ingredients(ingredient_name, price_per_unit))
+                            `);
+
+                        if (error) {
+                            console.error('Error fetching menu items and ingredients:', error);
+                            return [];
+                        } else {
+                            console.log('Fetched menu items and ingredients:', data);
+                            return data;
+                        }
+                    }
+
+                    // Define the click handler
+                    function onClick(event) {
+                        const menuId = parseInt(event.target.dataset.id);
+                        const menuItem = map.get(menuId);
+
+                        // Update the UI with menu item details
+                        document.querySelector('#menu-name').innerHTML = `Menu Item: ${menuItem.menu_name}`;
+                        
+                        const ingredientList = document.querySelector('.list');
+                        ingredientList.innerHTML = ""; // Clear existing ingredients
+
+                        menuItem.menu_ingredients.forEach(({ ingredients, quantity_used }) => {
+                            const listItem = document.createElement('h4');
+                            listItem.innerHTML = `${ingredients.ingredient_name} - Quantity Used: ${quantity_used}, Price: $${ingredients.price_per_unit}`;
+                            ingredientList.appendChild(listItem);
+                        });
+
+                        // Highlight selected button
+                        const buttons = document.querySelectorAll('.list-item');
+                        buttons.forEach((button) => {
+                            if (parseInt(button.dataset.id) === menuId) {
+                                button.classList.replace("btn-primary", "btn-secondary");
+                            } else {
+                                button.classList.replace("btn-secondary", "btn-primary");
+                            }
+                        });
+                    }
+
+                    // Populate buttons for each menu item
+                    menuItems.forEach((menuItem) => {
+                        const button = document.createElement('button');
+                        button.classList.add('btn', 'btn-primary', 'list-item', 'my-2');
+                        button.textContent = menuItem.menu_name;
+                        button.dataset.id = menuItem.menu_id; // Store menu ID
+                        map.set(menuItem.menu_id, menuItem); // Map menu data by ID
+                        button.addEventListener('click', onClick); // Attach click handler
+                        container.appendChild(button);
+                    });
+                </script>
                         </div>
                         <div class="main-inner-right d-flex flex-column">
-                            <h1 id="menu-name">Select an menu item!</h1>
+                            <h1 id="menu-name" class>Select
+                                a menu item!</h1>
+                            <h2>Ingredients</h2>
                             <ul class="list">
-                                <!-- TODO -->
-                                A list containing all ingredients
+                                <!-- Ingredients will be dynamically inserted here -->
                             </ul>
                         </div>
                     </div>
