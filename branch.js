@@ -4,19 +4,29 @@ import {API_KEY, API_URL} from './config.js'
 const supabase = createClient(API_URL, API_KEY);
 
 async function fetchBranches() {
-    return -1
+    return ["1","2","3"]
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
     // Initialize the selected page from sessionStorage, default to "Home"
-    console.log(fetchBranches())
+
+    const branches = await fetchBranches()
+    const branchSelect = document.querySelector("#select-branches")
+
+    branches.forEach((branch, i) => {
+        const newOption = document.createElement('option') 
+        newOption.value = branch
+        newOption.innerText = branch
+        branchSelect.appendChild(newOption)
+    })
+    
+
     if (!sessionStorage.getItem("selectedBranch")) {
 
         const branches = await fetchBranches()
         sessionStorage.setItem("selectedBranch", "");
     }
     
-    const branchSelect = document.querySelector('#select-branches')
 
     branchSelect.value = sessionStorage.getItem("selectedBranch")
 
