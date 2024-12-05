@@ -25,13 +25,16 @@
                         <a class="nav-link" href="index.html">Home</a>
                     </li>
                     <li class="nav-item h3">
-                        <a class="nav-link text-white" href="orders.html">Orders</a>
+                        <a class="nav-link text-white"
+                            href="orders.html">Orders</a>
                     </li>
                     <li class="nav-item h3">
-                        <a class="nav-link text-white" href="inventory.html">Inventory</a>
+                        <a class="nav-link text-white"
+                            href="inventory.html">Inventory</a>
                     </li>
                     <li class="nav-item h3">
-                        <a class="nav-link text-white" href="employees.html">Employees</a>
+                        <a class="nav-link text-white"
+                            href="employees.html">Employees</a>
                     </li>
                     <li class="nav-item h3">
                         <a class="nav-link text-white" href="menu.html">Menu</a>
@@ -50,8 +53,9 @@
                     </select>
                 </nav>
                 <div class="main-content d-flex flex-column flex-grow-1">
-                    <h1 id="page-title" class="align-self-center">Welcome to MacDondalds Management System</h1>
-                    <div class="">
+                    <h1 id="page-title" class="align-self-center">Welcome to
+                        MacDondalds Management System</h1>
+                    <div class>
                         <h1>Branch Information:</h1>
                         <hr>
                         <h2 id="branch-address"></h2>
@@ -63,7 +67,7 @@
                 </div>
             </div>
         </main>
-        
+
         <script type="module">
             
             // Populate employees dynamically
@@ -72,18 +76,30 @@
             const branchPhone = document.querySelector('#branch-phone')
             const branchOpen = document.querySelector('#branch-open')
             const branchClose = document.querySelector('#branch-close')
-            const currentBranch = JSON.parse(sessionStorage.getItem("selectedBranch"))
+            const branchSelect = document.querySelector('#select-branches')
+            
+            function setBranchInfo() {
 
-            branchAddress.innerText = "Address: "+currentBranch.address
-            branchId.innerText = "Branch Id: "+currentBranch.branch_id
-            branchPhone.innerText = "Phone: "+currentBranch.phone_number
-            branchOpen.innerText = "Open Time: "+currentBranch.open_time
-            branchClose.innerText = "Closing Time: "+currentBranch.close_time
+                if(sessionStorage.getItem("selectedBranch") !== 'undefined') {
+                    const currentBranch = JSON.parse(sessionStorage.getItem("selectedBranch"))
+
+                    branchAddress.innerText = "Address: "+currentBranch.address
+                    branchId.innerText = "Branch Id: "+currentBranch.branch_id
+                    branchPhone.innerText = "Phone: "+currentBranch.phone_number
+                    branchOpen.innerText = "Open Time: "+currentBranch.open_time
+                    branchClose.innerText = "Closing Time: "+currentBranch.close_time
+                }
+            }
             
+            setBranchInfo()
+
             // Define the click handler
-            
+            branchSelect.addEventListener('change', (event) => {
+                setBranchInfo()
+            })
+
         </script>
-        
+
         <script src="config.js" type="module"></script>
         <script src="branch.js" type="module"></script>
         <script src="db.js" type="module"></script>

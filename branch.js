@@ -34,16 +34,32 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   if (!sessionStorage.getItem("selectedBranch")) {
     const branches = await fetchBranches();
-    sessionStorage.setItem("selectedBranch", null);
+    sessionStorage.setItem("selectedBranch", {});
   }
 
-  const currentBranchAddress = JSON.parse(sessionStorage.getItem("selectedBranch")).address
-  branchSelect.value = currentBranchAddress
+  if(sessionStorage.getItem("selectedBranch") !== 'undefined') {
+      const currentBranchAddress = JSON.parse(sessionStorage.getItem("selectedBranch")).address
+      branchSelect.value = currentBranchAddress
+  }
   
   branchSelect.addEventListener("change", (event) => {
     const selectedAddress = event.target.value;
     const branchMetadata = JSON.stringify(optionsMetadata.get(selectedAddress)); // Retrieve metadata from Map
     sessionStorage.setItem("selectedBranch", branchMetadata);
-    console.log(sessionStorage.getItem("selectedBranch"))
+
+    // Populate employees dynamically
+    const branchAddress = document.querySelector('#branch-address')
+    const branchId = document.querySelector('#branch-id')
+    const branchPhone = document.querySelector('#branch-phone')
+    const branchOpen = document.querySelector('#branch-open')
+    const branchClose = document.querySelector('#branch-close')
+    const currentBranch = JSON.parse(sessionStorage.getItem("selectedBranch"))
+
+    if(!branchAddress) return
+    branchAddress.innerText = "Address: "+currentBranch.address
+    branchId.innerText = "Branch Id: "+currentBranch.branch_id
+    branchPhone.innerText = "Phone: "+currentBranch.phone_number
+    branchOpen.innerText = "Open Time: "+currentBranch.open_time
+    branchClose.innerText = "Closing Time: "+currentBranch.close_time
 });
 });
