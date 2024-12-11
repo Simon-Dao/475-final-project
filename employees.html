@@ -174,7 +174,7 @@
             const fireButton = document.querySelector('#fire-employee-button')
             fireButton.addEventListener('click', async (event) => {
 
-                
+                console.log(selectedEmployee)
                     
                 async function fireEmployee() {
                     const { error } = await supabase
@@ -190,13 +190,14 @@
                 }
                 
                 await fireEmployee();
+                location.reload();
             })
             
             // Define the click handler for employees
             function onEmployeeClick(event) {
                 const employeeId = parseInt(event.target.dataset.id);
                 const employee = map.get(employeeId);
-
+                selectedEmployee = employee
                 // Update the UI with employee details
                 document.querySelector('#employee-name').innerHTML = `Employee: ${employee.employee_name}`;
                 document.querySelector('#employee-job-title').innerHTML = `Job Title: ${employee.job_title}`;
@@ -282,6 +283,7 @@
                     console.log('Record added successfully:', data);
                     alert('Employee added successfully!');
                     document.getElementById('employeeForm').reset();
+                    location.reload();
                 }
             })
 

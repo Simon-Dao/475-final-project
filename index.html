@@ -64,13 +64,20 @@
                         <h2 id="branch-phone"></h2>
                         <h2 id="branch-open"></h2>
                         <h2 id="branch-close"></h2>
+                        <h1>Branch Stats:</h1>
+                        <hr>
+                        <h2>Average salaries per branch</h2>
+                        <ul id="salaries-ul"></ul>
                     </div>
                 </div>
             </div>
         </main>
 
         <script type="module">
-            
+            import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+            import { API_KEY, API_URL } from './config.js';
+
+            const supabase = createClient(API_URL, API_KEY);
             // Populate employees dynamically
             const branchAddress = document.querySelector('#branch-address')
             const branchId = document.querySelector('#branch-id')
@@ -101,6 +108,49 @@
             branchSelect.addEventListener('change', (event) => {
                 setBranchInfo()
             })
+
+            const salariesUL = document.querySelector('#salaries-ul');
+            window.addEventListener('load', async () => {
+                // Fetch data from Supabase
+                const { data, error } = await supabase.rpc('sum_salaries_by_branch');
+            
+                if (error) {
+                    console.error('Error fetching total salaries:', error);
+                    return;
+                }
+            
+                console.log(data);
+            
+                // Clear the list container before appending new items
+                salariesUL.innerHTML = "";
+            
+                // Iterate through the data and create styled list items
+                data.forEach((branch) => {
+                    // Create the list item
+                    const li = document.createElement('div');
+                    li.className = '';
+            
+                    // Set the inner HTML with a structured and responsive layout
+                    li.innerHTML = `
+                        <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center">
+                            <div class="text-truncate" >
+                                <h5 class="text-primary mb-1">Branch ID: ${branch.branch_id}</h5>
+                                <p class="mb-0 text-muted text-truncate">
+                                    <strong>Address:</strong> ${branch.address}
+                                </p>
+                            </div>
+                            <div class="mt-2 mt-md-0">
+                                <span class="badge bg-success fs-5 px-3 py-2 rounded-pill text-nowrap">
+                                    $${branch.total_salary.toLocaleString()}
+                                </span>
+                            </div>
+                        </div>
+                    `;
+            
+                    // Append the styled list item to the container
+                    salariesUL.appendChild(li);
+                });
+            });            
 
         </script>
 
