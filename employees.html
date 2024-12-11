@@ -52,95 +52,26 @@
                         <option value disabled selected>Select a Branch</option>
                     </select>
                 </nav>
+
                 <div class="main-content d-flex flex-column">
                     <h1>Employees</h1>
                     <hr>
                     <div class="main-inner d-flex">
                         <div class="main-inner-left">
-                            <script type="module">
-                    import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
-                    import { API_KEY, API_URL } from './config.js';
-
-                    const supabase = createClient(API_URL, API_KEY);
-                    const container = document.querySelector('.main-inner-left');
-                    const employees = await fetchEmployees();
-                    const map = new Map();
-                    let selectedEmployee = employees ? employees[0] : "";
-
-                    // Fetch employees and their shifts
-                    async function fetchEmployees() {
-                        const { data, error } = await supabase
-                            .from('employees') // Primary table
-                            .select(`
-                                employee_id,
-                                employee_name,
-                                job_title,
-                                employee_shifts(shift_date, start_time, end_time, branch_id) // Join with shifts
-                            `);
-
-                        if (error) {
-                            console.error('Error fetching employees and shifts:', error);
-                            return [];
-                        } else {
-                            console.log('Fetched employees and shifts:', data);
-                            return data;
-                        }
-                    }
-
-                    // Define the click handler for employees
-                    function onEmployeeClick(event) {
-                        const employeeId = parseInt(event.target.dataset.id);
-                        const employee = map.get(employeeId);
-
-                        // Update the UI with employee details
-                        document.querySelector('#employee-name').innerHTML = `Employee: ${employee.employee_name}`;
-                        document.querySelector('#employee-job-title').innerHTML = `Job Title: ${employee.job_title}`;
-                        
-                        const shiftTableBody = document.querySelector('#shift-table-body');
-                        shiftTableBody.innerHTML = ""; // Clear existing shifts
-
-                        employee.employee_shifts.forEach(shift => {
-                            const row = document.createElement('tr');
-                            row.innerHTML = `
-                                <td>${shift.shift_date}</td>
-                                <td>${shift.start_time}</td>
-                                <td>${shift.end_time}</td>
-                                <td>${shift.branch_id}</td>
-                            `;
-                            shiftTableBody.appendChild(row);
-                        });
-
-                        // Highlight selected button
-                        const buttons = document.querySelectorAll('.list-item');
-                        buttons.forEach((button) => {
-                            if (parseInt(button.dataset.id) === employeeId) {
-                                button.classList.replace("btn-primary", "btn-secondary");
-                            } else {
-                                button.classList.replace("btn-secondary", "btn-primary");
-                            }
-                        });
-                    }
-
-                    // Populate buttons for each employee
-                    employees.forEach((employee) => {
-                        const button = document.createElement('button');
-                        button.classList.add('btn', 'btn-primary', 'list-item', 'my-2');
-                        button.textContent = employee.employee_name;
-                        button.dataset.id = employee.employee_id; // Store employee ID
-                        map.set(employee.employee_id, employee); // Map employee data by ID
-                        button.addEventListener('click', onEmployeeClick); // Attach click handler
-                        container.appendChild(button);
-                    });
-                </script>
+                            <button type="button" id="add-employee-button"
+                                class="btn btn-primary" data-bs-toggle="modal"
+                                data-bs-target="#exampleModal">
+                                Add Employee
+                            </button>
                         </div>
                         <div class="main-inner-right d-flex flex-column">
                             <!-- Employee Details -->
-                            <div class="" style="margin-bottom: 3rem;">
-                                    <h1 id="employee-name"
-                                        class="">Select an
-                                        employee!</h1>
-                                    <h2 id="employee-job-title"
-                                        class=""></h2>
+                            <div class style="margin-bottom: 3rem;">
+                                <h1 id="employee-name"
+                                    class>Select an
+                                    employee!</h1>
+                                <h2 id="employee-job-title"
+                                    class></h2>
                             </div>
                             <!-- Employee Shifts -->
                             <h2>Shifts</h2>
@@ -157,12 +88,208 @@
                                     <!-- Shifts will be dynamically inserted here -->
                                 </tbody>
                             </table>
+                            <div class="flex-grow-1"></div>
+                            <button class="btn btn-danger"
+                                id="fire-employee-button">Fire
+                                Employee</button>
                         </div>
                     </div>
                 </div>
             </div>
 
+            <!-- Modal -->
+            <div class="modal fade" id="exampleModal" tabindex="-1"
+                aria-labelledby="exampleModalLabel" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="exampleModalLabel">Add
+                                Employee</h5>
+                            <button type="button" class="btn-close"
+                                data-bs-dismiss="modal"
+                                aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <form>
+                                <input type="text" class="form-control"
+                                    id="name" placeholder="Employee Name">
+                                <input type="text" class="form-control"
+                                    id="position" placeholder="Employee Position">
+                                <input type="number" class="form-control"
+                                    id="salary" placeholder="Employee Salary">
+                            </form>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary"
+                                data-bs-dismiss="modal">Close</button>
+                            <button type="button" class="btn btn-primary"
+                                id="employee-add-button">Confirm</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </main>
+        <script type="module">
+            import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+            import { API_KEY, API_URL } from './config.js';
+
+            function getCurrentDate() {
+                const today = new Date();
+              
+                const year = today.getFullYear(); // Get the full year (e.g., 2022)
+                const month = String(today.getMonth() + 1).padStart(2, '0'); // Months are 0-indexed, pad to 2 digits
+                const day = String(today.getDate()).padStart(2, '0'); // Pad to 2 digits
+              
+                return `${year}-${month}-${day}`;
+            }
+
+            const supabase = createClient(API_URL, API_KEY);
+            const container = document.querySelector('.main-inner-left');
+            const employees = await fetchEmployees();
+            const map = new Map();
+            let selectedEmployee = employees ? employees[0] : "";
+
+            // Fetch employees and their shifts
+            async function fetchEmployees() {
+                const { data, error } = await supabase
+                    .from('employees') // Primary table
+                    .select(`
+                        employee_id,
+                        employee_name,
+                        start_date,
+                        end_date,
+                        job_title,
+                        employee_shifts(shift_date, start_time, end_time, branch_id) // Join with shifts
+                    `).eq('branch_id', JSON.parse(sessionStorage.getItem('selectedBranch')).branch_id);
+
+                if (error) {
+                    console.error('Error fetching employees and shifts:', error);
+                    return [];
+                } else {
+                    console.log('Fetched employees and shifts:', data);
+                    return data;
+                }
+            }
+            
+            const fireButton = document.querySelector('#fire-employee-button')
+            fireButton.addEventListener('click', async (event) => {
+
+                
+                    
+                async function fireEmployee() {
+                    const { error } = await supabase
+                                .from('employees')
+                                .update({"end_date":getCurrentDate()})
+                                .eq('employee_id', selectedEmployee.employee_id);
+                            if (error) {
+                                console.error('Error removing employee:', error);
+                            } else {
+                                alert('Employee removed successfully!');
+                                location.reload();
+                            }
+                }
+                
+                await fireEmployee();
+            })
+            
+            // Define the click handler for employees
+            function onEmployeeClick(event) {
+                const employeeId = parseInt(event.target.dataset.id);
+                const employee = map.get(employeeId);
+
+                // Update the UI with employee details
+                document.querySelector('#employee-name').innerHTML = `Employee: ${employee.employee_name}`;
+                document.querySelector('#employee-job-title').innerHTML = `Job Title: ${employee.job_title}`;
+                
+                const shiftTableBody = document.querySelector('#shift-table-body');
+                shiftTableBody.innerHTML = ""; // Clear existing shifts
+
+                employee.employee_shifts.forEach(shift => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${shift.shift_date}</td>
+                        <td>${shift.start_time}</td>
+                        <td>${shift.end_time}</td>
+                        <td>${shift.branch_id}</td>
+                    `;
+                    shiftTableBody.appendChild(row);
+                });
+
+                // Highlight selected button
+                const buttons = document.querySelectorAll('.list-item');
+                buttons.forEach((button) => {
+                    if (parseInt(button.dataset.id) === employeeId) {
+                        button.classList.replace("btn-primary", "btn-secondary");
+                    } else {
+                        button.classList.replace("btn-secondary", "btn-primary");
+                    }
+                });
+
+            }
+
+            function hasDatePassed(inputDate) {
+                // Get the current date in the format YYYY-MM-DD
+                const today = new Date();
+                const currentDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+              
+                // Convert the input date string (YYYY-MM-DD) to a Date object
+                const targetDate = new Date(inputDate);
+              
+                // Compare the two dates
+                return targetDate < currentDate;
+              }
+              
+              // Usage
+              console.log(hasDatePassed("2022-01-01")); // true (if today is later than Jan 1, 2022)
+              console.log(hasDatePassed("2024-12-11")); // false (if today is Dec 10, 2024)
+
+            // Populate buttons for each employee
+            employees.forEach((employee) => {
+                const button = document.createElement('button');
+                button.classList.add('btn', 'btn-primary', 'list-item', 'my-2');
+                button.textContent = employee.employee_name + (employee.end_date ? ": Fired" : "");
+                button.dataset.id = employee.employee_id; // Store employee ID
+                map.set(employee.employee_id, employee); // Map employee data by ID
+                button.addEventListener('click', onEmployeeClick); // Attach click handler
+                container.appendChild(button);
+            });
+
+            const addButton = document.querySelector('#employee-add-button');
+           
+            addButton.addEventListener('click', async (event) => {
+                
+                const name = document.querySelector("#name");
+                const salary = document.querySelector('#salary');
+                const position = document.querySelector('#position');
+
+                
+                const { data, error } = await supabase
+                .from('employees') // Replace with your table name
+                .insert([{
+                    employee_id: Math.floor(Math.random() * (99998)),
+                    employee_name: name.value,
+                    branch_id: JSON.parse(sessionStorage.getItem("selectedBranch")).branch_id,
+                    start_date: getCurrentDate(),
+                    end_date: null,
+                    job_title: position.value,
+                    salary: salary.value
+                }]);
+
+                if (error) {
+                    console.error('Error adding record:', error.message);
+                    alert('Error adding record. Check console for details.');
+                } else {
+                    console.log('Record added successfully:', data);
+                    alert('Employee added successfully!');
+                    document.getElementById('employeeForm').reset();
+                }
+            })
+
+        </script>
+        <script
+            src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+            integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
+            crossorigin="anonymous"></script>
         <script src="config.js" type="module"></script>
         <script src="db.js" type="module"></script>
         <script src="branch.js" type="module"></script>

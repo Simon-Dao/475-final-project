@@ -69,6 +69,7 @@
                                 let selected = orders ? orders[0] : ""
                                 
                                 async function fetchOrders() {
+
                                     const { data, error } = await supabase
                                     .from('orders') // Primary table
                                     .select(`
@@ -78,7 +79,7 @@
                                       time_ordered,
                                       quantity_ordered,
                                       menu_items!inner(menu_id, menu_name) // Inner join with menu_items
-                                    `);
+                                    `).eq('branch_id', JSON.parse(sessionStorage.getItem('selectedBranch')).branch_id);
                                   
                                   if (error) {
                                     console.error('Error fetching data:', error);
@@ -123,6 +124,22 @@
                                     button.addEventListener('click', onClick); // Attach click handler
                                     container.appendChild(button);
                                 });
+
+                                const deleteButton = document.querySelector('#delete-button');
+
+                                deleteButton.addEventListener('click', async (event) => {
+                                    
+                                    const { data, error } = await supabase
+                                    .from('orders') // Replace with your table name
+                                    .delete()
+                                    .eq('order_id', selected)
+
+                                if (error) {
+                                    console.error('Error inserting data:', error.message);
+                                } else {
+                                    console.log('Inserted data:', data);
+                                }
+                                })
                             </script>
                         </div>
                         <div class="main-inner-right d-flex flex-column">
@@ -131,7 +148,8 @@
                             <h2 id="order-menu_id"></h2>
                             <h2 id="order-quantity"></h2>
                             <div class="flex-grow-1"></div>
-                            <button class="btn btn-danger">Delete</button>
+                            <button class="btn btn-danger"
+                                id="delete-button">Delete</button>
                         </div>
                     </div>
                 </div>

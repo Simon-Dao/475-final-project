@@ -34,10 +34,10 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   if (!sessionStorage.getItem("selectedBranch")) {
     const branches = await fetchBranches();
-    sessionStorage.setItem("selectedBranch", {});
+    sessionStorage.setItem("selectedBranch", "{}");
   }
 
-  if(sessionStorage.getItem("selectedBranch") !== 'undefined') {
+  if(sessionStorage.getItem("selectedBranch") !== "{}") {
       const currentBranchAddress = JSON.parse(sessionStorage.getItem("selectedBranch")).address
       branchSelect.value = currentBranchAddress
   }
@@ -55,7 +55,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     const branchClose = document.querySelector('#branch-close')
     const currentBranch = JSON.parse(sessionStorage.getItem("selectedBranch"))
 
-    if(!branchAddress) return
     branchAddress.innerText = "Address: "+currentBranch.address
     branchId.innerText = "Branch Id: "+currentBranch.branch_id
     branchPhone.innerText = "Phone: "+currentBranch.phone_number

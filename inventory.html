@@ -22,13 +22,16 @@
                         <a class="nav-link" href="index.html">Home</a>
                     </li>
                     <li class="nav-item h3">
-                        <a class="nav-link text-white" href="orders.html">Orders</a>
+                        <a class="nav-link text-white"
+                            href="orders.html">Orders</a>
                     </li>
                     <li class="nav-item h3">
-                        <a class="nav-link text-white" href="inventory.html">Inventory</a>
+                        <a class="nav-link text-white"
+                            href="inventory.html">Inventory</a>
                     </li>
                     <li class="nav-item h3">
-                        <a class="nav-link text-white" href="employees.html">Employees</a>
+                        <a class="nav-link text-white"
+                            href="employees.html">Employees</a>
                     </li>
                     <li class="nav-item h3">
                         <a class="nav-link text-white" href="menu.html">Menu</a>
@@ -41,7 +44,8 @@
             <div class="flex-grow-1 d-flex flex-column">
                 <nav id="top-nav" class="d-flex justify-content-start">
                     <h2>Branch:</h2>
-                    <select name="Branches" id="select-branches" class="form-select">
+                    <select name="Branches" id="select-branches"
+                        class="form-select">
                         <option value disabled selected>Select a Branch</option>
                     </select>
                 </nav>
@@ -56,11 +60,31 @@
                             
                                 const supabase = createClient(API_URL, API_KEY);
                                 const container = document.querySelector('.main-inner-left');
-                                const ingredients = await fetchInventory();
+                                const ingredients = await fetchIngredients();
                                 const map = new Map();
-                                let selected = ingredients ? ingredients[0] : "";
+                                let selected = ingredients ? ingredients[0].ingredient_id : "";
 
-                                async function fetchInventory() {
+                                async function fetchInventory(ingredient_id) {
+                                    const { data, error } = await supabase
+                                    .from('inventories') // Primary table
+                                    .select(`
+                                        branch_id, 
+                                        ingredient_id,
+                                        quantity_available
+                                    `)
+                                    .eq('branch_id', JSON.parse(sessionStorage.getItem('selectedBranch')).branch_id)
+                                    .eq('ingredient_id', ingredient_id);
+
+
+                                    if (error) {
+                                        console.error('Error fetching ingredients and inventories:', error);
+                                    } else {
+                                        console.log('Ingredients and their inventories:', data);
+                                    }
+                                    
+                                    return data;
+                                }
+                                async function fetchIngredients() {
                                     const { data, error } = await supabase
                                     .from('ingredients') // Primary table
                                     .select(`
@@ -68,8 +92,7 @@
                                         ingredient_name,
                                         price_per_unit,
                                         date_bought,
-                                        expiration,
-                                        inventories(branch_id, quantity_available) // Join with inventories table
+                                        expiration
                                     `);
 
                                     if (error) {
@@ -82,23 +105,25 @@
                                 }
 
                                 // Define the click handler
-                                function onClick(event) {
-                                    const ingredientId = parseInt(event.target.textContent);
+                                async function onClick(event) {
+                                    const idString = event.target.textContent.substring(event.target.textContent.indexOf(":")+1)
+                                    const ingredientId = parseInt(idString);
                                     const ingredient = map.get(ingredientId);
-
+                                    const inventory = await fetchInventory(ingredient.ingredient_id);
 
                                     // Update the UI
                                     document.querySelector('#ingredient-id').innerHTML = `Ingredient ID: ${ingredient.ingredient_id}`;
-                                    document.querySelector('#ingredient-quantity').innerHTML = `Quantity Available: $${ingredient.inventories[0].quantity_available}`;
+                                    document.querySelector('#ingredient-quantity').innerHTML = `Quantity Available: ${inventory.length == 1 ? inventory[0].quantity_available : 0}`;
                                     document.querySelector('#ingredient-name').innerHTML = `Name: ${ingredient.ingredient_name}`;
-                                    document.querySelector('#ingredient-bought').innerHTML = `Date Bought: ${ingredient.date_bought}`;
-                                    document.querySelector('#ingredient-expiration').innerHTML = `Expiration: ${ingredient.expiration}`;
                                     document.querySelector('#ingredient-price').innerHTML = `Price Per Unit: $${ingredient.price_per_unit}`;
                                     
+                                    selected = ingredient.ingredient_id;
+
                                     // Highlight selected button
                                     const buttons = document.querySelectorAll('.list-item');
                                     buttons.forEach((button) => {
-                                        if (parseInt(button.textContent) === ingredientId) {
+                                    
+                                        if (parseInt(button.dataset.id) === ingredientId) {
                                             button.classList.replace("btn-primary", "btn-secondary");
                                         } else {
                                             button.classList.replace("btn-secondary", "btn-primary");
@@ -110,14 +135,91 @@
                                 ingredients.forEach((ingredient) => {
                                     const button = document.createElement('button');
                                     button.classList.add('btn', 'btn-primary', 'list-item');
-                                    button.textContent = ingredient.ingredient_id;
+                                    button.dataset.id = ingredient.ingredient_id; // Store employee ID
+                                    button.innerText = ingredient.ingredient_name + " ID:" + ingredient.ingredient_id;
                                     map.set(ingredient.ingredient_id, ingredient);
                                     button.addEventListener('click', onClick); // Attach click handler
                                     container.appendChild(button);
                                 });
+
+                                const editButton = document.querySelector("#edit-button")
+                                const quantity = document.querySelector("#quantity")
+
+                                editButton.addEventListener('click', async (event) => {
+                                    try {
+                                        // Parse the new quantity value
+                                        const newQuantity = parseInt(quantity.value, 10);
+                                
+                                        if (isNaN(newQuantity) || newQuantity < 0) {
+                                            alert('Please enter a valid quantity.');
+                                            return;
+                                        }
+                                
+                                        const branchId = JSON.parse(sessionStorage.getItem("selectedBranch")).branch_id;
+                                
+                                        // Check if the inventory record exists
+                                        const { data: existingRecord, error: fetchError } = await supabase
+                                            .from('inventories')
+                                            .select('quantity_available')
+                                            .eq('ingredient_id', selected)
+                                            .eq('branch_id', branchId);
+                                
+                                        if (fetchError) {
+                                            console.error('Error checking inventory record:', fetchError);
+                                            alert('An error occurred while checking inventory.');
+                                            return;
+                                        }
+                                
+                                        if (existingRecord && existingRecord.length > 0) {
+                                            // Update existing record
+
+                                            const { error: updateError } = await supabase
+                                                .from('inventories')
+                                                .update({ quantity_available: newQuantity })
+                                                .eq('ingredient_id', selected)
+                                                .eq('branch_id', branchId);
+                                
+                                            if (updateError) {
+                                                console.error('Error updating ingredient stocks:', updateError);
+                                                alert('Failed to update inventory.');
+                                            } else {
+                                                alert('Inventory updated successfully!');
+                                                // Update the UI with the new quantity
+                                                document.querySelector('#ingredient-quantity').innerText = `Quantity Available: ${newQuantity}`;
+                                            }
+                                        } else {
+                                            // Insert new record
+                                            const { error: insertError } = await supabase
+                                                .from('inventories')
+                                                .insert([{
+                                                    ingredient_id: selected,
+                                                    branch_id: branchId,
+                                                    quantity_available: newQuantity,
+                                                }]);
+                                
+                                            if (insertError) {
+                                                console.error('Error inserting new inventory record:', insertError);
+                                                alert('Failed to add new inventory.');
+                                            } else {
+                                                alert('New inventory record created successfully!');
+                                                // Update the UI with the new quantity
+                                                document.querySelector('#ingredient-quantity').innerText = `Quantity Available: ${newQuantity}`;
+                                            }
+                                        }
+                                    } catch (err) {
+                                        console.error('Unexpected error:', err);
+                                        alert('An unexpected error occurred. Check console for details.');
+                                    }
+                                });
+                                                           
                             </script>
                         </div>
                         <div class="main-inner-right d-flex flex-column">
+                            <button type="button" class="btn btn-success"
+                                data-bs-toggle="modal"
+                                data-bs-target="#exampleModal">
+                                Edit Quantity
+                            </button>
                             <h1 id="ingredient-id">Select an ingredient!</h1>
                             <h2 id="ingredient-quantity"></h2>
                             <h2 id="ingredient-name"></h2>
@@ -130,6 +232,37 @@
                 </div>
             </div>
         </main>
+
+        <!-- Modal -->
+        <div class="modal fade" id="exampleModal" tabindex="-1"
+            aria-labelledby="exampleModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="exampleModalLabel">Edit
+                            Quantity</h5>
+                        <button type="button" class="btn-close"
+                            data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <input type="number" class="form-control"
+                            id="quantity" placeholder>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary"
+                            data-bs-dismiss="modal">Close</button>
+                        <button type="button" id="edit-button"
+                            class="btn btn-primary">Save
+                            changes</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script
+            src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+            integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
+            crossorigin="anonymous"></script>
         <script src="config.js" type="module"></script>
         <script src="db.js" type="module"></script>
         <script src="branch.js" type="module"></script>
